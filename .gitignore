@@ -1,5 +1,15 @@
-venv/
+# Python
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# OS
 .DS_Store
-models/*.pkl
+
+# Streamlit
+.streamlit/
