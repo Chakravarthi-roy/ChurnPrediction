@@ -1,8 +1,8 @@
 # Bank Customer Churn Prediction
 
-Predicts which bank customers are likely to leave (churn), using 10,000 customer
-records. Built to answer a business question, not just to hit an accuracy number:
-**which customers should a retention team focus on, and is the model worth using?**
+So this is my churn prediction project! I took 10,000 bank customer records and tried to figure out who's likely to leave the bank and why. But I didn't want to just build a model and stop there — I wanted to actually answer a real question: *which customers should a retention team even bother focusing on, and is the model worth using at all?*
+
+Dataset Link: 
 
 ## Repo structure
 
@@ -25,40 +25,28 @@ records. Built to answer a business question, not just to hit an accuracy number
 | Precision | 71.5% |
 | ROC-AUC | 0.84 |
 
-**Business impact:** tested across a range of cost assumptions (real financial figures
-weren't available for this dataset), the model reliably beats a "do nothing" baseline.
-It only beats an unlimited-budget "contact everyone" strategy in some scenarios — this
-is expected, since that baseline assumes unlimited reach and a guaranteed retention
-success. The model's real advantage is under a **realistic, budget-constrained**
-setting (e.g. "we can only contact 500 customers this month — who should they be?"),
-where a targeted list consistently outperforms a random one. See the notebook's
-business impact section for the full comparison and reasoning.
+*Business impact:* I tested this across a range of cost assumptions, since I didn't have real financial numbers for this bank (more on that below). But the model reliably beats a "do nothing" baseline, which is good. It only beats an unlimited-budget "contact everyone" strategy in *some* scenarios though — and that actually makes sense once you think about it, because that baseline assumes you can reach every single customer and the retention offer works every single time. The model's real value shows up in a more realistic, budget-constrained setting — like, "we can only contact 500 customers this month, who should they be?" — and there, a targeted list beats a random one every time. Check the notebook's business impact section for the full breakdown.
 
 ## What's in the notebook
 
 1. **EDA** — churn rate by feature, box plots, correlation heatmap
-2. **Feature engineering** — flags built and validated one at a time against
-   cross-validated F1 (several intuitive ones, like Germany-based and gender-based
-   interaction flags, were tested and rejected because they didn't help despite
-   looking strong in raw churn-rate comparisons)
-3. **Modeling** — Logistic Regression, Random Forest, and XGBoost compared via 5-fold
+2. **Feature engineering** — I built flags one at a time and tested each one against
+   cross-validated F1 instead of just adding them because they seemed like a good idea.
+   Some of them, like Germany-based and gender-based combos, looked really promising in
+   raw churn-rate comparisons but just didn't help the model, so I dropped them
+3. **Modeling** — compared Logistic Regression, Random Forest, and XGBoost using 5-fold
    stratified cross-validation
-4. **Feature selection experiments** — 10+ feature-set variants compared side by side
+4. **Feature selection experiments** — tested 10+ feature-set variants side by side
 5. **Final model evaluation** — confusion matrix, ROC curve
 6. **Business impact** — sensitivity analysis across retention-cost and
    customer-value assumptions
-7. **Model export** — saves the final model + feature order to `models/`, which
-   `src/app.py` loads directly (the app never retrains anything itself)
+7. **Model export** — saves the final model and feature list to `models/`, and
+   `src/app.py` just loads that directly. The app never retrains anything on its own
 
 ## Key finding
 
-The strongest churn signal isn't any single feature — it's **inactive customers who
-still carry a balance**. Age (40–60) combined with inactivity is the next-strongest
-combined signal. Both were turned into engineered features and confirmed to help via
-cross-validation rather than assumed to help. Several other plausible-looking
-combinations (e.g. Germany + Female + Inactive, which had the single highest raw churn
-rate found at 44.6%) were tested and did **not** improve the model — a reminder that a
-striking gap in a groupby table is a reason to test a feature, not a guarantee it helps.
+The strongest churn signal isn't any single feature on its own — it's *inactive customers who still carry a balance*. Age (40–60) combined with inactivity is the next strongest one. Both of these became engineered features, and I confirmed they actually helped through cross-validation instead of just assuming they would. I also tested some other combos that looked really strong on paper — like Germany + Female + Inactive together, which had the single highest raw churn rate I found in the whole dataset (44.6%!) — and they did *not* improve the model at all. Good reminder to
+myself: a striking gap in a groupby table means "go test this," not "this definitely works."
 
 ## Try the app
 
@@ -67,13 +55,13 @@ pip install -r requirements.txt
 streamlit run src/app.py
 ```
 
-Three tabs: single-customer prediction with a plain-language explanation, batch CSV
-scoring ranked by risk, and a business-impact calculator with adjustable cost
-assumptions.
+It's got three tabs: single-customer prediction with a plain-language explanation, batch CSV scoring ranked by risk, and a business-impact calculator with adjustable cost assumptions.
 
-To deploy it publicly (free): push this repo to GitHub, then go to
-[share.streamlit.io](https://share.streamlit.io), sign in with GitHub, and point it at
-this repo with `src/app.py` as the entry point.
+I actually deployed it on Streamlit! Link: **https://churnprediction-by-me.streamlit.app/**
+
+The app predicts the probability of a customer churning, along with a small reason for the prediction (that part's just simple if-else logic based on the inputs, not the model itself) There's also a bulk insert mode — drop in your own dataset and it analyzes the whole thing and gives you results for everyone in it.
+
+*Note:* it might be in Sleep mode since it's on the free tier, so just wake it up and give it a second before testing it out!
 
 ## Tech stack
 
@@ -81,13 +69,33 @@ Python, pandas, scikit-learn, XGBoost, matplotlib/seaborn, Streamlit
 
 ## Assumptions & limitations
 
-- Retention-cost and customer-value figures in the business impact section are
-  illustrative placeholders (\$50–100 and \$300–800 respectively), not real bank data —
-  clearly labeled as such in the notebook. The analysis is designed to be robust to the
-  exact numbers, not dependent on them.
-- The model assumes a retention offer succeeds with certainty when sent to an actual
-  churner — a simplification. Real success rates would lower the numbers for every
-  strategy but shouldn't change which strategy wins.
+- The retention-cost and customer-value numbers in the business impact section are
+  placeholders I made up (\$50–100 and \$300–800) — I didn't have real bank data for
+  this, and I say so clearly in the notebook. The whole point of testing a range
+  instead of one number is so the conclusion doesn't depend on getting these exactly
+  right
+- The model assumes a retention offer works with 100% certainty if it's sent to
+  someone who was actually going to churn — obviously a simplification. Real success
+  rates would bring the numbers down for every strategy, but I don't think it would
+  change which strategy comes out on top
+
+## What I learned in the process
+
+So many things, honestly!
+
+The first thing that comes to mind is just *how to look at a dataset*. I used to hesitate even opening one up. Now I actually feel confident I can sit down with any dataset and start pulling insights out of it — just by looking at the fields and thinking about what might actually contribute to the thing I'm trying to predict, and then digging into those first.
+
+I also picked up a bunch of formulas and ways of actually analyzing data properly.
+
+And feature engineering — that was a big one. Once I started working on this dataset, I kept getting all these random doubts, like "wait, why aren't we checking this" or "why wouldn't that contribute to churn" — and it turns out the data answers almost all of it, as long as you're analyzing it the right way.
+
+I had so many feature ideas and I just kept chasing them one after another. Then at some point I realized — if I just keep coming up with new features forever, I'm going to waste a ton of time on ones that turn out to be completely insignificant. So I switched gears and started training the cleaned, feature-engineered dataset on three classification algorithms: Random Forest, Logistic Regression, and XGBoost.
+
+And there was a twist in the training part too! Almost all the metrics I calculated came out really close to each other. So I was stuck on how to even pick a winner. Random Forest was slightly ahead on accuracy and most other metrics, except F1 — and that felt strange to me. So I used StratifiedKFold to actually check which model held up better across folds, and it turned out XGBoost was the better one the whole time. I learned something important from that: you can never just look at accuracy and decide a model is "better." Never.
+
+Another thing — I learned you can actually calculate how significant a feature is using XGBoost. That was such an interesting find for me. Like, okay, I trained the model, sure, but how do I actually know which field or feature is pulling the most weight? Turns out you can measure that directly, and I found that the features I personally engineered had more significance than a lot of the original fields. In the end, only two of the features I engineered actually made it into the final model — and I kept them.
+
+And there's still a lot more to go — see below.
 
 ## Next steps
 
@@ -95,3 +103,9 @@ Python, pandas, scikit-learn, XGBoost, matplotlib/seaborn, Streamlit
 - SHAP values for per-customer explanations
 - A capacity-constrained version of the business impact analysis (e.g. "top 500 by
   churn probability" instead of a fixed classification threshold)
+
+So yeah, as you can see, these are still left. I know a little bit about fine-tuning XGBoost, but the other two I have basically no idea about yet.
+
+There are also still a bunch of feature combinations I want to try. I still need to figure out why some other fields, when added, actually give a *lower* F1 score with more variance — which isn't really a good sign. I hadn't paid too much attention to that before, but I'm going to look into it properly and make sure I actually find the real connection between those fields and churn. Stay tuned!
+
+Thank you for coming this far!
